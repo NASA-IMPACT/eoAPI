@@ -13,6 +13,7 @@ from titiler.pgstac.db import close_db_connection, connect_to_db
 from titiler.pgstac.factory import MosaicTilerFactory
 
 from eoapi.raster.config import ApiSettings
+from eoapi.raster.dependencies import DatasetPathParams
 from eoapi.raster.factory import MultiBaseTilerFactory
 from eoapi.raster.reader import STACReader
 from eoapi.raster.version import __version__ as eoapi_raster_version
@@ -22,7 +23,11 @@ logging.getLogger("botocore.utils").disabled = True
 logging.getLogger("rio-tiler").setLevel(logging.ERROR)
 
 settings = ApiSettings()
-optional_headers = [OptionalHeader.server_timing] if settings.debug else []
+
+if settings.debug:
+    optional_headers = [OptionalHeader.server_timing, OptionalHeader.x_assets]
+else:
+    optional_headers = []
 
 app = FastAPI(title=settings.name, version=eoapi_raster_version)
 add_exception_handlers(app, DEFAULT_STATUS_CODES)
@@ -35,6 +40,7 @@ app.include_router(mosaic.router, prefix="/mosaic", tags=["PgSTAC Mosaic"])
 # Custom STAC titiler endpoint (not added to the openapi docs)
 stac = MultiBaseTilerFactory(
     reader=STACReader,
+    path_dependency=DatasetPathParams,
     router_prefix="stac",
     optional_headers=optional_headers,
 )

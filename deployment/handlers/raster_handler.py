@@ -14,4 +14,4 @@ os.environ["AWS_SESSION_TOKEN"] = os.environ["SESSION_TOKEN"]
 logging.getLogger("mangum.lifespan").setLevel(logging.ERROR)
 logging.getLogger("mangum.http").setLevel(logging.ERROR)
 
-handler = Mangum(app, lifespan="auto", log_level="error")
+handler = Mangum(app, lifespan="auto")
