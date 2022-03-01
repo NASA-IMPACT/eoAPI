@@ -17,6 +17,7 @@ from eoapi.raster.dependencies import DatasetPathParams
 from eoapi.raster.factory import MultiBaseTilerFactory
 from eoapi.raster.reader import STACReader
 from eoapi.raster.version import __version__ as eoapi_raster_version
+from eoapi.raster.datasetparams import DatasetParams
 
 logging.getLogger("botocore.credentials").disabled = True
 logging.getLogger("botocore.utils").disabled = True
@@ -34,7 +35,11 @@ add_exception_handlers(app, DEFAULT_STATUS_CODES)
 add_exception_handlers(app, MOSAIC_STATUS_CODES)
 
 # PgSTAC mosaic tiler
-mosaic = MosaicTilerFactory(router_prefix="mosaic", optional_headers=optional_headers)
+mosaic = MosaicTilerFactory(
+    router_prefix="mosaic",
+    optional_headers=optional_headers,
+    dataset_dependency=DatasetParams,
+)
 app.include_router(mosaic.router, prefix="/mosaic", tags=["PgSTAC Mosaic"])
 
 # Custom STAC titiler endpoint (not added to the openapi docs)
