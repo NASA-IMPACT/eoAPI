@@ -6,6 +6,8 @@ aws-cdk.aws_apigatewayv2_integrations==1.139.0
 aws-cdk.aws_cognito==1.139.0
 aws-cdk.aws_rds==1.139.0
 aws-cdk.aws_ec2==1.139.0
+aws-cdk.aws_cloudfront==1.139.0
+aws-cdk.aws_cloudfront_origins==1.139.0
 
 # pydantic settings
 pydantic

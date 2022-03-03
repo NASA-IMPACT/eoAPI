@@ -14,6 +14,8 @@ from aws_cdk import aws_lambda
 from aws_cdk import aws_rds as rds
 from aws_cdk import aws_secretsmanager as secretsmanager
 from aws_cdk import core
+from aws_cdk import aws_cloudfront as cloudfront
+from aws_cdk import aws_cloudfront_origins as origins
 from config import (
     eoAPISettings,
     eoDBSettings,
@@ -243,8 +245,35 @@ class eoAPIconstruct(core.Stack):
                 ),
             )
             core.CfnOutput(self, "eoAPI-raster", value=raster_api.url.strip("/"))
+            origin_request_policy = cloudfront.OriginRequestPolicy(
+                self,
+                f"{id}-raster-cf-origin-request-policy",
+                origin_request_policy_name=f"{id}-raster-request-policy",
+                query_string_behavior=cloudfront.OriginRequestQueryStringBehavior.all()
+            )
+            cloudfront.Distribution(
+                self,
+                f"{id}-raster-cf-distribution",
+                default_behavior=cloudfront.BehaviorOptions(
+                    origin=origins.HttpOrigin(
+                        (
+                            f"{raster_api.api_id}.execute-api."
+                            f"{core.Stack.of(self).region}."
+                            f"{core.Stack.of(self).url_suffix}"
+                        )
+                    ),
+                    origin_request_policy=origin_request_policy,
 
+                ),
+                error_responses=[
+                    cloudfront.ErrorResponse(
+                        http_status=404,
+                        ttl=core.Duration.seconds(10),
+                    )
+                ]
+            )
             setup_db.is_required_by(eoraster_function)
+
 
         # eoapi.stac
         if "stac" in eoapi_settings.functions:
