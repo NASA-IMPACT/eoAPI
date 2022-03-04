@@ -263,7 +263,7 @@ class eoAPIconstruct(core.Stack):
                         )
                     ),
                     origin_request_policy=origin_request_policy,
-
+                    allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
                 ),
                 error_responses=[
                     cloudfront.ErrorResponse(
