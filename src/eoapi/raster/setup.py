@@ -6,7 +6,8 @@ with open("README.md") as f:
     long_description = f.read()
 
 inst_reqs = [
-    "titiler.pgstac==0.1.0a3",
+    "titiler.core @ git+https://github.com/developmentseed/titiler.git#subdirectory=src/titiler/core",
+    "titiler.pgstac==0.1.0a5",
     "jinja2>=3.0,<4.0",
     "starlette-cramjam>=0.1.0,<0.2",
     "importlib_resources>=1.1.0;python_version<'3.9'",

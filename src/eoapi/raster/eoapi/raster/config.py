@@ -11,6 +11,7 @@ class _ApiSettings(pydantic.BaseSettings):
     name: str = "eoAPI-raster"
     cors_origins: str = "*"
     cachecontrol: str = "public, max-age=3600"
+    cachecontrol_max_http_code: int = 400
     debug: bool = False
 
     @pydantic.validator("cors_origins")

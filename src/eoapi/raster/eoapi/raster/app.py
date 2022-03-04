@@ -75,6 +75,7 @@ if settings.cors_origins:
 app.add_middleware(
     CacheControlMiddleware,
     cachecontrol=settings.cachecontrol,
+    cachecontrol_max_http_code=settings.cachecontrol_max_http_code,
     exclude_path={r"/healthz"},
 )
 app.add_middleware(
