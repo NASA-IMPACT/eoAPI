@@ -249,6 +249,11 @@ class eoAPIconstruct(core.Stack):
                 self,
                 f"{id}-raster-cf-origin-request-policy",
                 origin_request_policy_name=f"{id}-raster-request-policy",
+                header_behavior=cloudfront.OriginRequestHeaderBehavior.allow_list(
+                    "Origin",
+                    "Access-Control-Request-Method",
+                    "Access-Control-Request-Headers",
+                ),
                 query_string_behavior=cloudfront.OriginRequestQueryStringBehavior.all()
             )
             cloudfront.Distribution(
@@ -264,6 +269,7 @@ class eoAPIconstruct(core.Stack):
                     ),
                     origin_request_policy=origin_request_policy,
                     allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
+                    response_headers_policy=cloudfront.ResponseHeadersPolicy.CORS_ALLOW_ALL_ORIGINS_WITH_PREFLIGHT,
                 ),
                 error_responses=[
                     cloudfront.ErrorResponse(
