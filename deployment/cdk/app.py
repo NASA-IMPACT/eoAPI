@@ -143,12 +143,12 @@ class eoAPIconstruct(core.Stack):
                 ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
             ),
         ]
-        for (id, service) in interface_endpoints:
-            vpc.add_interface_endpoint(id, service=service)
+        for (key, service) in interface_endpoints:
+            vpc.add_interface_endpoint(key, service=service)
 
         gateway_endpoints = [("S3", ec2.GatewayVpcEndpointAwsService.S3)]
-        for (id, service) in gateway_endpoints:
-            vpc.add_gateway_endpoint(id, service=service)
+        for (key, service) in gateway_endpoints:
+            vpc.add_gateway_endpoint(key, service=service)
 
         eodb_settings = eoDBSettings()
         db = rds.DatabaseInstance(
@@ -178,19 +178,22 @@ class eoAPIconstruct(core.Stack):
             secrets_prefix=os.path.join(stage, name),
         )
 
+        db_proxy = db.add_proxy(
+            f"{id}-rds-proxy",
+            secrets=[setup_db.secret],
+            vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
+        )
         core.CfnOutput(
             self,
             f"{id}-database-secret-arn",
             value=db.secret.secret_arn,
             description="Arn of the SecretsManager instance holding the connection info for Postgres DB",
         )
-
         # eoapi.raster
         if "raster" in eoapi_settings.functions:
             db_secrets = {
-                "POSTGRES_HOST": setup_db.secret.secret_value_from_json(
-                    "host"
-                ).to_string(),
+                "POSTGRES_HOST": db_proxy.endpoint,
                 "POSTGRES_DBNAME": setup_db.secret.secret_value_from_json(
                     "dbname"
                 ).to_string(),
@@ -235,7 +238,7 @@ class eoAPIconstruct(core.Stack):
                 )
             )
 
-            db.connections.allow_from(eoraster_function, port_range=ec2.Port.tcp(5432))
+            db_proxy.connections.allow_from(eoraster_function, port_range=ec2.Port.tcp(5432))
             raster_api = apigw.HttpApi(
                 self,
                 f"{id}-raster-endpoint",
@@ -284,12 +287,8 @@ class eoAPIconstruct(core.Stack):
         # eoapi.stac
         if "stac" in eoapi_settings.functions:
             db_secrets = {
-                "POSTGRES_HOST_READER": setup_db.secret.secret_value_from_json(
-                    "host"
-                ).to_string(),
-                "POSTGRES_HOST_WRITER": setup_db.secret.secret_value_from_json(
-                    "host"
-                ).to_string(),
+                "POSTGRES_HOST_READER": db_proxy.endpoint,
+                "POSTGRES_HOST_WRITER": db_proxy.endpoint,
                 "POSTGRES_DBNAME": setup_db.secret.secret_value_from_json(
                     "dbname"
                 ).to_string(),
@@ -331,7 +330,7 @@ class eoAPIconstruct(core.Stack):
                     key="TITILER_ENDPOINT", value=raster_api.url.strip("/")
                 )
 
-            db.connections.allow_from(eostac_function, port_range=ec2.Port.tcp(5432))
+            db_proxy.connections.allow_from(eostac_function, port_range=ec2.Port.tcp(5432))
 
             stac_api = apigw.HttpApi(
                 self,
@@ -348,9 +347,7 @@ class eoAPIconstruct(core.Stack):
         # eoapi.vector
         if "vector" in eoapi_settings.functions:
             db_secrets = {
-                "POSTGRES_HOST": setup_db.secret.secret_value_from_json(
-                    "host"
-                ).to_string(),
+                "POSTGRES_HOST": db_proxy.endpoint,
                 "POSTGRES_DBNAME": setup_db.secret.secret_value_from_json(
                     "dbname"
                 ).to_string(),
@@ -386,7 +383,7 @@ class eoAPIconstruct(core.Stack):
             for k, v in db_secrets.items():
                 eovector_function.add_environment(key=k, value=str(v))
 
-            db.connections.allow_from(eovector_function, port_range=ec2.Port.tcp(5432))
+            db_proxy.connections.allow_from(eovector_function, port_range=ec2.Port.tcp(5432))
 
             vector_api = apigw.HttpApi(
                 self,
@@ -440,7 +437,7 @@ class eoAPIconstruct(core.Stack):
             for k, v in db_secrets.items():
                 eofeatures_function.add_environment(key=k, value=str(v))
 
-            db.connections.allow_from(
+            db_proxy.connections.allow_from(
                 eofeatures_function, port_range=ec2.Port.tcp(5432)
             )
 
